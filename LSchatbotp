@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Universal AI Interface</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Typography for Markdown */
+        .prose { font-size: 0.95rem; line-height: 1.6; color: #1e293b; }
+        .prose pre { background: #1e1e1e; padding: 12px; border-radius: 8px; overflow-x: auto; color: #fff; margin: 10px 0; }
+        .prose code { font-family: 'Courier New', monospace; font-size: 0.9em; background: #f1f5f9; padding: 2px 4px; border-radius: 4px; color: #ef4444; }
+        .prose pre code { background: transparent; color: inherit; padding: 0; }
+        .prose ul { list-style-type: disc; padding-left: 20px; margin: 10px 0; }
+        .prose ol { list-style-type: decimal; padding-left: 20px; margin: 10px 0; }
+        .prose strong { font-weight: 600; color: #0f172a; }
+        .prose h1, .prose h2, .prose h3 { font-weight: 700; color: #0f172a; margin-top: 1em; margin-bottom: 0.5em; }
+
+        /* Mobile Fixes */
+        .h-dvh { height: 100dvh; } /* Dynamic Viewport Height */
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-enter { animation: fadeIn 0.3s ease-out forwards; }
+        
+        /* Loader */
+        #loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #ffffff; z-index: 9999; display: flex;
+            align-items: center; justify-content: center;
+            font-family: sans-serif; font-size: 1.2rem; color: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-800 antialiased h-dvh flex overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+
+    <div id="loading">
+        <div class="flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
+            <p>Initializing Interface...</p>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="bg-slate-50 border-r border-slate-200 w-64 flex-shrink-0 flex flex-col hidden md:flex transition-all duration-300 absolute md:relative z-20 h-full shadow-xl md:shadow-none">
+        <div class="p-4 flex items-center justify-between">
+            <button onclick="startNewChat()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-4 rounded-full flex items-center gap-2 transition-colors text-sm">
+                <span class="material-symbols-outlined text-xl">add</span>
+                New chat
+            </button>
+            <button onclick="toggleSidebar()" class="md:hidden ml-2 p-2 text-slate-500 hover:bg-slate-200 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1" id="history-list">
+            <div class="text-xs font-bold text-slate-400 px-3 mb-2 uppercase tracking-wide">Recent</div>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-200 text-slate-600 text-sm truncate flex items-center gap-2 transition-colors">
+                <span class="material-symbols-outlined text-lg">chat_bubble</span>
+                Project Brainstorming
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-200 text-slate-600 text-sm truncate flex items-center gap-2 transition-colors">
+                <span class="material-symbols-outlined text-lg">code</span>
+                React vs Vue Analysis
+            </button>
+        </div>
+
+        <div class="p-4 border-t border-slate-200">
+            <button class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 w-full px-2 py-2 hover:bg-slate-200 rounded-lg transition-colors">
+                <span class="material-symbols-outlined">settings</span>
+                Settings
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full relative w-full">
+        
+        <header class="h-16 flex items-center px-4 justify-between flex-shrink-0 sticky top-0 bg-white/80 backdrop-blur-sm z-10">
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSidebar()" class="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div class="flex items-center gap-1 text-slate-700 font-medium cursor-pointer hover:bg-slate-100 px-2 py-1 rounded-lg transition-colors">
+                    <span>Gemini 1.5 Pro</span>
+                    <span class="material-symbols-outlined text-lg">expand_more</span>
+                </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-md cursor-pointer hover:bg-blue-700 transition-colors">
+                U
+            </div>
+        </header>
+
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 pb-0 scroll-smooth">
+            <div class="max-w-3xl mx-auto flex flex-col gap-6 pb-4 min-h-full justify-end" id="messages-area">
+                
+                <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center space-y-6 py-10 opacity-100 transition-opacity duration-500">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent text-5xl font-semibold tracking-tight pb-2">
+                        Hello, User
+                    </div>
+                    <p class="text-2xl text-slate-400 font-light">How can I help you today?</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl px-4 mt-8">
+                        <button onclick="fillInput('Explain quantum computing simply')" class="p-4 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-xl text-left text-sm text-slate-600 transition-all hover:shadow-sm">
+                            Explain quantum computing simply
+                        </button>
+                        <button onclick="fillInput('Write a Python script to parse CSV')" class="p-4 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-xl text-left text-sm text-slate-600 transition-all hover:shadow-sm">
+                            Write a Python script to parse CSV
+                        </button>
+                        <button onclick="fillInput('Draft a professional email')" class="p-4 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-xl text-left text-sm text-slate-600 transition-all hover:shadow-sm">
+                            Draft a professional email
+                        </button>
+                        <button onclick="fillInput('Suggest a 3-day trip to Tokyo')" class="p-4 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-xl text-left text-sm text-slate-600 transition-all hover:shadow-sm">
+                            Suggest a 3-day trip to Tokyo
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="w-full flex-shrink-0 bg-white">
+            <div class="max-w-3xl mx-auto px-4 py-4">
+                <div class="relative bg-slate-100 rounded-[28px] border border-slate-200 focus-within:bg-white focus-within:border-slate-300 focus-within:shadow-md transition-all duration-200">
+                    <textarea 
+                        id="user-input" 
+                        rows="1" 
+                        placeholder="Enter a prompt here" 
+                        class="w-full bg-transparent text-slate-800 placeholder:text-slate-500 px-5 py-4 pr-12 resize-none outline-none max-h-48 overflow-y-auto text-base rounded-[28px]"
+                        oninput="autoResize(this)"
+                        onkeydown="handleEnter(event)"
+                    ></textarea>
+                    
+                    <div class="absolute right-2 bottom-2 flex items-center gap-1">
+                        <button id="send-btn" onclick="sendMessage()" class="p-2 bg-transparent text-slate-400 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-slate-200 hover:text-blue-600">
+                            <span class="material-symbols-outlined fill-current">send</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="text-center mt-2">
+                    <p class="text-[10px] text-slate-400">Gemini may display inaccurate info, including about people, so double-check its responses.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-10 hidden md:hidden transition-opacity"></div>
+
+    <script>
+        // --- 1. Initialization & Loader ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const loader = document.getElementById('loading');
+            const app = document.getElementById('app');
+            
+            // Simulate brief init time
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                loader.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => loader.remove(), 500);
+            }, 600);
+        });
+
+        // --- 2. State & Config ---
+        const state = {
+            isSidebarOpen: false,
+            isGenerating: false,
+            messages: []
+        };
+
+        const dom = {
+            input: document.getElementById('user-input'),
+            messagesArea: document.getElementById('messages-area'),
+            welcomeScreen: document.getElementById('welcome-screen'),
+            sidebar: document.getElementById('sidebar'),
+            overlay: document.getElementById('sidebar-overlay'),
+            chatContainer: document.getElementById('chat-container'),
+            sendBtn: document.getElementById('send-btn')
+        };
+
+        // --- 3. UI Helpers ---
+        
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+            toggleSendButton();
+        }
+
+        function toggleSendButton() {
+            const hasText = dom.input.value.trim().length > 0;
+            dom.sendBtn.style.color = hasText ? '#2563eb' : '#94a3b8'; // Blue vs Slate-400
+        }
+
+        function fillInput(text) {
+            dom.input.value = text;
+            autoResize(dom.input);
+            dom.input.focus();
+        }
+
+        function toggleSidebar() {
+            state.isSidebarOpen = !state.isSidebarOpen;
+            if (state.isSidebarOpen) {
+                dom.sidebar.classList.remove('hidden');
+                dom.overlay.classList.remove('hidden');
+            } else {
+                dom.sidebar.classList.add('hidden');
+                dom.overlay.classList.add('hidden');
+            }
+        }
+
+        function startNewChat() {
+            dom.messagesArea.innerHTML = '';
+            dom.messagesArea.appendChild(dom.welcomeScreen);
+            dom.welcomeScreen.style.display = 'flex';
+            state.messages = [];
+            if (window.innerWidth < 768) toggleSidebar(); // Close sidebar on mobile
+        }
+
+        function scrollToBottom() {
+            dom.chatContainer.scrollTo({
+                top: dom.chatContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        // --- 4. Chat Logic ---
+
+        function handleEnter(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const text = dom.input.value.trim();
+            if (!text || state.isGenerating) return;
+
+            // 1. Hide Welcome Screen
+            dom.welcomeScreen.style.display = 'none';
+
+            // 2. Add User Message
+            addMessageToUI('user', text);
+            state.messages.push({ role: 'user', content: text });
+            
+            // 3. Clear Input
+            dom.input.value = '';
+            dom.input.style.height = 'auto';
+            toggleSendButton();
+            state.isGenerating = true;
+
+            // 4. Create AI Placeholder
+            const aiMsgId = addMessageToUI('model', '');
+            const aiContentDiv = document.getElementById(aiMsgId);
+            
+            // 5. Simulate AI Response (Streaming Effect)
+            await simulateAIStream(aiContentDiv, text);
+            
+            state.isGenerating = false;
+        }
+
+        function addMessageToUI(role, content) {
+            const id = `msg-${Date.now()}`;
+            const isUser = role === 'user';
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = `w-full flex ${isUser ? 'justify-end' : 'justify-start'} msg-enter`;
+            
+            const avatar = isUser ? 
+                '' : 
+                `<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-red-500 flex-shrink-0 flex items-center justify-center text-white mr-4 mt-1">
+                    <span class="material-symbols-outlined text-sm">sparkle</span>
+                 </div>`;
+
+            // Note: Prose class handles markdown styling
+            const innerHTML = `
+                ${!isUser ? avatar : ''}
+                <div class="${isUser ? 'bg-[#f0f4f9] text-slate-800 rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%]' : 'w-full max-w-full text-slate-800'}">
+                    <div id="${id}" class="prose w-full max-w-none break-words">${isUser ? content : ''}</div>
+                </div>
+            `;
+
+            wrapper.innerHTML = innerHTML;
+            dom.messagesArea.appendChild(wrapper);
+            scrollToBottom();
+            
+            return id; // Return ID so we can update AI message content later
+        }
+
+        async function simulateAIStream(element, userPrompt) {
+            // Mock response logic based on simple keywords
+            let responseText = generateMockResponse(userPrompt);
+            let index = 0;
+            
+            // Simulated typing delay
+            return new Promise((resolve) => {
+                // Show loading spinner initially
+                element.innerHTML = `<span class="material-symbols-outlined animate-spin text-blue-500">progress_activity</span>`;
+
+                setTimeout(() => {
+                    const interval = setInterval(() => {
+                        const chunk = responseText.slice(0, index + 3); // Grab chunk
+                        
+                        // Parse Markdown on the fly (computationally expensive but fine for demo)
+                        // In production, you'd only parse the full block or use a stream parser
+                        element.innerHTML = marked.parse(chunk);
+                        
+                        // Re-highlight code blocks
+                        element.querySelectorAll('pre code').forEach((block) => {
+                            hljs.highlightElement(block);
+                        });
+
+                        index += 3; // Speed of typing
+                        scrollToBottom();
+
+                        if (index >= responseText.length) {
+                            clearInterval(interval);
+                            // Final render to ensure everything is perfect
+                            element.innerHTML = marked.parse(responseText);
+                             element.querySelectorAll('pre code').forEach((block) => {
+                                hljs.highlightElement(block);
+                            });
+                            resolve();
+                        }
+                    }, 15); // 15ms per chunk
+                }, 800); // Initial "thinking" delay
+            });
+        }
+
+        // --- 5. Mock AI Logic (The "Brain") ---
+        function generateMockResponse(input) {
+            const lower = input.toLowerCase();
+            
+            if (lower.includes('code') || lower.includes('python') || lower.includes('script')) {
+                return `Here is a **Python** script to parse a CSV file as requested:
+
+\`\`\`python
+import csv
+
+def parse_csv(file_path):
+    data = []
+    with open(file_path, mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        for row in csv_reader:
+            data.append(row)
+    return data
+
+# Usage
+results = parse_csv('data.csv')
+print(f"Loaded {len(results)} rows.")
+\`\`\`
+
+### Explanation:
+1. We use the \`csv\` module.
+2. \`DictReader\` converts each row into a dictionary.
+3. The data is returned as a list of dictionaries.
+
+Let me know if you need to handle **large files** or specific delimiters!`;
+            }
+            
+            if (lower.includes('list') || lower.includes('trip') || lower.includes('tokyo')) {
+                return `## 3-Day Tokyo Itinerary 🇯🇵
+
+**Day 1: Modern & Historical**
+* **Morning**: Visit *Senso-ji Temple* in Asakusa.
+* **Lunch**: Sushi near Tsukiji Outer Market.
+* **Evening**: See the view from Tokyo Skytree.
+
+**Day 2: Fashion & Culture**
+* **Morning**: Walk through *Meiji Shrine*.
+* **Afternoon**: Explore Harajuku (Takeshita Street) and Shibuya Crossing.
+* **Evening**: Dinner in Shinjuku (Omoide Yokocho).
+
+**Day 3: Tech & Art**
+* **Morning**: TeamLab Planets (Digital Art).
+* **Afternoon**: Akihabara for electronics and anime.
+* **Evening**: Roppongi Hills for city lights.`;
+            }
+
+            return `I am a simulated AI interface. You said: "**${input}**".
+
+I can simulate:
+1. **Markdown rendering** (Lists, Bold, Italic)
+2. **Code highlighting** (Python, JS, etc.)
+3. **Streaming text effects**
+
+Try asking me to *"write a python script"* or *"make a list"* to see these features in action!`;
+        }
+    </script>
+</body>
+</html>
